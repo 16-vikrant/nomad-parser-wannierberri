@@ -2,7 +2,7 @@ import logging
 
 from nomad.datamodel import EntryArchive
 
-from wannierberri.parsers.parser import WannierBerriParser()
+from wannierberri.parsers.parser import WannierBerriParser
 
 
 def test_parse_file():
