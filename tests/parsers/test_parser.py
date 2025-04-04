@@ -6,8 +6,8 @@ from wannierberri.parsers.parser import NewParser
 
 
 def test_parse_file():
-    parser = NewParser()
+    parser = WannierBerriParser()
     archive = EntryArchive()
-    parser.parse('tests/data/example.out', archive, logging.getLogger())
+    parser.parse('tests/data/1/result-SHC_qiao_iter-0000.dat', archive, logging.getLogger())
 
     assert archive.workflow2.name == 'test'

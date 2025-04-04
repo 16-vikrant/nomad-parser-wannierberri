@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 # Test data
-tests/data/*
+tests/data/use_npz.ipynb
 # Distribution / packaging
 .Python
 build/
