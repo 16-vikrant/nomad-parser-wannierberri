@@ -8,6 +8,7 @@ __pycache__/
 
 # Test data
 tests/data/use_npz.ipynb
+tests/data/*/Wannierberri.py
 # Distribution / packaging
 .Python
 build/
