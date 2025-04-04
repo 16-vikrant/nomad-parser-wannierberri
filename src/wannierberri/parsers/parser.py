@@ -19,6 +19,7 @@ configuration = config.get_plugin_entry_point(
 )
 
 
+import pandas as pd
 class WannierBerriParser(MatchingParser):
     def parse(
         self,
