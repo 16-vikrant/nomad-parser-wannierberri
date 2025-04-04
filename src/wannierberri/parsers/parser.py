@@ -13,13 +13,14 @@ if TYPE_CHECKING:
 from nomad.config import config
 from nomad.datamodel.metainfo.workflow import Workflow
 from nomad.parsing.parser import MatchingParser
+import pandas as pd
 
 configuration = config.get_plugin_entry_point(
     'wannierberri.parsers:parser_entry_point'
 )
 
 
-import pandas as pd
+
 class WannierBerriParser(MatchingParser):
     def parse(
         self,
@@ -30,7 +31,7 @@ class WannierBerriParser(MatchingParser):
     ) -> None:
         
         # Read the mainfile and extract the data
-        df = pd.read_csv(mainfile, sep=r"\s+", comment="#", header=None)
+        # df = pd.read_csv(mainfile, sep=r"\s+", comment="#", header=None)
         logger.info('WannierBerriParser.parse', parameter=configuration.parameter)
 
         archive.workflow2 = Workflow(name='test')
