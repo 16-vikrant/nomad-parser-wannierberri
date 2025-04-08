@@ -6,13 +6,13 @@ class NewParserEntryPoint(ParserEntryPoint):
     parameter: int = Field(0, description='Custom configuration parameter')
 
     def load(self):
-        from wannierberri.parsers.parser import NewParser
+        from wannierberri.parsers.parser import WannierBerriParser
 
-        return NewParser(**self.dict())
+        return WannierBerriParser(**self.dict())
 
 
 parser_entry_point = NewParserEntryPoint(
-    name='NewParser',
+    name='WannierBerriParser',
     description='New parser entry point configuration.',
     mainfile_name_re='*result-SHC_*_*.dat',
     mainfile_content_re='Efermi',
