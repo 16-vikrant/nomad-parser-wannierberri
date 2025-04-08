@@ -55,17 +55,22 @@ class WannierBerriParser(MatchingParser):
         The columns will have complex values with real part set to 0.
         """
         # Read the file, skipping the first two lines
-        df = pd.read_csv(file_path, sep=r"\s+", comment='#', usecols=range(56), skiprows=2)
+        df = pd.read_csv(
+            file_path, 
+            sep=r"\s+", 
+            comment='#', 
+            usecols=range(56), 
+            skiprows=2,
+        )
         energies = df.iloc[:, 0].values
         omega = df.iloc[:, 1].values
-        shc_tensor = df.iloc[:, 2:].values
 
         # Extract the real and imaginary parts (alternating columns)
         real_parts = df.iloc[:, 2::2].to_numpy()  # Columns 2, 4, 6, ...
         imag_parts = df.iloc[:, 3::2].to_numpy()  # Columns 3, 5, 7, ...
         
         # Create complex numbers with real part = 0 and imaginary part from `imag_parts`
-        complex_tensor = real_parts + 1j * imag_parts  # Real part is 0, only imaginary part is used
+        complex_tensor = real_parts + 1j * imag_parts 
 
         # Get component names
         components = self.read_shc_component_names(file_path)
@@ -93,13 +98,13 @@ class WannierBerriParser(MatchingParser):
         shc_results = SHCResults()
 
         # Fill the schema quantities with parsed data
-        shc_results.efermi = 0.0  # Assuming Fermi energy is the first energy value
+        shc_results.efermi = 0.0  
 
         shc_results.omega = df_shc['omega'].values    
         shc_results.energies = df_shc['energy'].values
-        
-        shc_results.shc_components = df_shc.drop(columns=['energy', 'omega']).values  # Complex SHC tensor
-        shc_results.shc_labels = df_shc.columns[2:].values  # SHC component labels (excluding energy and omega)
+
+        shc_results.shc_components = df_shc.drop(columns=['energy', 'omega']).values
+        shc_results.shc_labels = df_shc.columns[2:].values
 
         # Add the parsed SHCResults schema to the archive
         archive.workflow2 = Workflow(name='test')
