@@ -14,7 +14,7 @@ class NewParserEntryPoint(ParserEntryPoint):
 parser_entry_point = NewParserEntryPoint(
     name='WannierBerriParser',
     description='New parser entry point configuration.',
-    mainfile_name_re='.*result-SHC_*_*.dat',
+    mainfile_name_re=r'.*result-SHC_.*\.dat',
     mainfile_content_re='Efermi',
     mainfile_mime_re='text/plain',
 )

@@ -95,19 +95,24 @@ class WannierBerriParser(MatchingParser):
         df_shc = self.read_shc_data(mainfile)
 
         # Create an instance of SHCResults schema
-        shc_results = SHCResults()
+        archive.data = SHCResults()
 
         # Fill the schema quantities with parsed data
-        shc_results.efermi = 0.0  
+        archive.data.efermi = 0.0  
+        archive.data.omega = df_shc['omega'].values    
+        archive.data.energies = df_shc['energy'].values
+        # archive.data.shc_components = df_shc.drop(columns=['energy', 'omega']).values
 
-        shc_results.omega = df_shc['omega'].values    
-        shc_results.energies = df_shc['energy'].values
+        # Drop 'energy' and 'omega' columns
+        shc_only = df_shc.drop(columns=['energy', 'omega'])
+        shc_components_real = np.round(shc_only.values.real, 6)
+        archive.data.shc_components = shc_components_real.astype(float)
 
-        shc_results.shc_components = df_shc.drop(columns=['energy', 'omega']).values
-        shc_results.shc_labels = df_shc.columns[2:].values
+        archive.data.shc_labels = df_shc.columns[2:].values
+        archive.data.xyz_real = df_shc['xyz'].values.real
 
         # Add the parsed SHCResults schema to the archive
-        archive.workflow2 = Workflow(name='test')
-        archive.workflow2.shc_results = shc_results
+        archive.workflow2 = Workflow(name='Spin Hall Conductivity')
+        archive.workflow2.shc_results = archive.data.xyz_real
         
         logger.info('SHC data parsed and stored in the archive.')
