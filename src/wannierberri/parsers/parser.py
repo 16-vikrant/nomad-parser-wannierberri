@@ -93,10 +93,6 @@ class WannierBerriParser(MatchingParser):
 
         # Parse the SHC data from the file
         df_shc = self.read_shc_data(mainfile)
-        
-        new_df = pd.melt(df_shc, id_vars=["energy", "omega"], var_name="component", value_name="Complex")
-        new_df["Re"] = new_df["Complex"].apply(np.real)
-        new_df["Im"] = new_df["Complex"].apply(np.imag)
 
         # Create an instance of SHCResults schema
         archive.data = SHCResults()
