@@ -12,4 +12,4 @@ def test_parse_file():
         'tests/data/1/result-SHC_qiao_iter-0000.dat', archive, logging.getLogger()
     )
 
-    assert archive.workflow2.name == 'test'
+    assert archive.workflow2.name == 'Spin Hall Conductivity'
