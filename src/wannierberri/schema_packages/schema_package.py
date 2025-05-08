@@ -34,7 +34,6 @@ configuration = config.get_plugin_entry_point(
 
 m_package = SchemaPackage()
 
-
 class NewSchemaPackage(Schema):
     name = Quantity(
         type=str, a_eln=ELNAnnotation(component=ELNComponentEnum.StringEditQuantity)
@@ -47,7 +46,7 @@ class SHCResults(PlotSection, Schema):
             'x': '#energies',
             'y': '#xyz_real',
             'label': 'SHC vs Energy',
-            'index': 1,
+            'index': 0,
             'layout': {
                 'title': {'text': 'Spin Hall Conductivity'},
                 'xaxis': {'title': {'text': 'Energy (eV)'}},
@@ -78,6 +77,13 @@ class SHCResults(PlotSection, Schema):
     type=np.float64,
     shape=['n_energy'],
     description='Real part of SHC xyz component',
+    unit='S/m',
+    )
+
+    xyz_imag = Quantity(
+    type=np.float64,
+    shape=['n_energy'],
+    description='Imaginary part of SHC xyz component',
     unit='S/m',
     )
 
