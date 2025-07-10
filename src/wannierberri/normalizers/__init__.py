@@ -2,16 +2,16 @@ from nomad.config.models.plugins import NormalizerEntryPoint
 from pydantic import Field
 
 
-class NewNormalizerEntryPoint(NormalizerEntryPoint):
+class WannierBerriNormalizerEntryPoint(NormalizerEntryPoint):
     parameter: int = Field(0, description='Custom configuration parameter')
 
     def load(self):
-        from wannierberri.normalizers.normalizer import NewNormalizer
+        from wannierberri.normalizers.normalizer import WannierBerriNormalizer
 
-        return NewNormalizer(**self.dict())
+        return WannierBerriNormalizer(**self.dict())
 
 
-normalizer_entry_point = NewNormalizerEntryPoint(
-    name='NewNormalizer',
-    description='New normalizer entry point configuration.',
+normalizer_entry_point = WannierBerriNormalizerEntryPoint(
+    name='WannierBerriNormalizer',
+    description='WannierBerri normalizer entry point configuration.',
 )
