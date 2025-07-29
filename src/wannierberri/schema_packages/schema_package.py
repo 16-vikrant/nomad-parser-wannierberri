@@ -41,8 +41,8 @@ class SHCResults(PlotSection, EntryData):
         a_plotly_express=[
             {
                 'method': 'line',
-                'x': '#Energies',
-                'y': '#SHC_XYZ_Real',
+                'x': '#energy',
+                'y': '#shc_xyz_real',
                 'label': 'SHC vs Energy',
                 'index': 0,
                 'layout': {
@@ -53,57 +53,56 @@ class SHCResults(PlotSection, EntryData):
             }
         ],
     )
-    # efermi = Quantity(
-    #     type=np.float64,
-    #     unit='eV',
-    #     description='Fermi energy corresponding to SHC data.',
-    #     a_display={'visible': False},
-    # )
 
-    # omega = Quantity(
-    #     type=np.float64,
-    #     shape=['n_points'],
-    #     unit='eV',
-    #     description='Frequency at which SHC is computed.',
-    #     a_display={'visible': False},
-    # )
-
-    # shc_components = Quantity(
-    #     type=np.complex128,
-    #     shape=['n_points', 'n_components'],
-    #     description='Complex SHC values for different components like xyz, xxy, etc.',
-    #     a_display={'visible': False},
-    # )
-
-    SHC_XYZ_Real = Quantity(
-    type=np.float64,
-    shape=['n_points'],
-    description='Real part of SHC xyz component',
-    unit='S/m',
-    a_display={'visible': False},
-    )
-
-    # shc_xyz_imag = Quantity(
-    # type=np.float64,
-    # shape=['n_points'],
-    # description='Imaginary part of SHC xyz component',
-    # unit='S/m',
-    # a_display={'visible': False},
-    # )
-
-    SHC_Labels = Quantity(
+    shc_label = Quantity(
         type=str,
-        shape=['n_components'],
-        description='Labels for the SHC tensor components (e.g., xyz, xxy, ...).',
-        a_display={'visible': False},
+        shape=[27],  # 30 tensor components (xxx ... zzz)
+        default=[
+            'xxx', 'xxy', 'xxz',
+            'xyx', 'xyy', 'xyz',
+            'xzx', 'xzy', 'xzz',
+            'yxx', 'yxy', 'yxz',
+            'yyx', 'yyy', 'yyz',
+            'yzx', 'yzy', 'yzz',
+            'zxx', 'zxy', 'zxz',
+            'zyx', 'zyy', 'zyz',
+            'zzx', 'zzy', 'zzz'
+        ],
+        description='Labels of SHC tensor components.'
     )
 
-    Energies = Quantity(
+    energy = Quantity(
         type=np.float64,
         shape=['n_points'],
         unit='eV',
-        description='Energy points at which SHC is computed.',
-        a_display={'visible': False},
+        description='Energy (Efermi) values.'
+    )
+
+    fermi_energy = Quantity(
+        type=np.float64,
+        shape=[],
+        unit='eV',
+        description='Fermi energy from Wannier90.win.',
+        default=0.0,
+    )
+
+    shc_xyz_real = Quantity(
+        type=np.float64,
+        shape=['n_points'],
+        unit='S/cm',
+        description='Real part of the xyz component of the SHC tensor.'
+    )
+
+    shc_tensor_real = Quantity(
+        type=np.float64,
+        shape=['n_points', 27],
+        description='Real parts of all SHC tensor components.'
+    )
+
+    shc_tensor_imag = Quantity(
+        type=np.float64,
+        shape=['n_points', 27],
+        description='Imaginary parts of all SHC tensor components.'
     )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger') -> None:

@@ -4,8 +4,9 @@ if TYPE_CHECKING:
     from structlog.stdlib import BoundLogger
 
 import pandas as pd
+import re
 import numpy as np
-import os
+from pathlib import Path
 
 from nomad.config import config
 from nomad.parsing.parser import MatchingParser
@@ -13,58 +14,82 @@ from runschema.run import Run, Program
 from simulationworkflowschema import SinglePoint
 from wannierberri.schema_packages.schema_package import SHCResults
 
+
 configuration = config.get_plugin_entry_point(
     'wannierberri.parsers:parser_entry_point'
 )
 
 class WannierBerriParser(MatchingParser):
     """
-    Parser for WannierBerri SHC output files.
-    Populates archive.data with SHCResults for easier visualization.
+    Parser for WannierBerri SHC output text file.
+    Plots the Spin Hall Conductivity (SHC) results.
+    XYZ component is plotted against energy.
     """
 
-    def read_shc_component_names(self, mainfile: str) -> list[str]:
+    def read_shc_data(self, mainfile: str):
+        numeric_lines = []
+        component_candidates = []
+
         with open(mainfile, 'r') as f:
             for line in f:
-                if line.strip().startswith("# "):
-                    header_line = line.strip()
-                    break
-            else:
-                return []
+                line_strip = line.strip()
+                alpha_or_numeric = line_strip.split()
+                def is_numeric(term):
+                    try:
+                        np.float64(term)
+                        return True
+                    except ValueError:
+                        return False
+                if not line_strip:
+                    continue
+                if not all(is_numeric(c) for c in alpha_or_numeric):
+                    component_candidates.extend(re.findall(r'\b[a-z]{3}\b', line_strip.lower()))
+                    continue
+                numeric_lines.append(line_strip)
 
-        components = header_line.split()
-        components = [comp for comp in components if not comp.startswith("#")]
+        if not numeric_lines:
+            raise ValueError("No numeric data found in SHC file.")
+
+        # Parse numeric data
+        data = np.array([list(map(float, line.split())) for line in numeric_lines])
+
+        energy = data[:, 0]
+        omega = data[:, 1]
+        shc_tensor_real = data[:, 2:56:2]  # real parts: cols 2,4,...,54
+        shc_tensor_imag = data[:, 3:56:2]  # imag parts: cols 3,5,...,55
+
+        # Extract and deduplicate labels
+        exclude = {'energy', 'omega'}
+        labels = []
         seen = set()
-        components = [x for x in components if not (x in seen or seen.add(x))]
-        return components[2:]  # skip 'energy' and 'omega'
+        for comp in component_candidates:
+            if comp not in exclude and comp not in seen:
+                seen.add(comp)
+                labels.append(comp)
 
-    def read_shc_data(self, mainfile: str) -> pd.DataFrame:
-        try:
-            df = pd.read_csv(
-                mainfile,
-                sep=r'\s+',
-                comment='#',
-                skiprows=2,
-                usecols=range(56),
-                engine='python'
-            )
-        except Exception as e:
-            raise ValueError(f"Failed to read SHC data from {mainfile}: {e}")
+        df_real = pd.DataFrame(shc_tensor_real, columns=labels)
+        df_imag = pd.DataFrame(shc_tensor_imag, columns=labels)
 
-        energies = df.iloc[:, 0].values
-        omega = df.iloc[:, 1].values
-        real_parts = df.iloc[:, 2::2].to_numpy()
-        imag_parts = df.iloc[:, 3::2].to_numpy()
-        complex_tensor = real_parts + 1j * imag_parts
+        return labels, energy, df_real, df_imag
+    
+    def extract_fermi_energy(self, mainfile: Path) -> float:
+        regex = re.compile(r'fermi_energy\s*=\s*([\d\.\-]+)', re.IGNORECASE)
+        search_dirs = [
+            mainfile.parent,
+            mainfile.parent.parent,
+            *mainfile.parent.parent.glob('*/')
+        ]
 
-        components = self.read_shc_component_names(mainfile)
+        for directory in search_dirs:
+            wannier90_path = directory / 'wannier90.win'
+            if wannier90_path.exists():
+                content = wannier90_path.read_text()
+                match = regex.search(content)
+                if match:
+                    return float(match.group(1))
 
-        df_shc = pd.DataFrame(complex_tensor, columns=components)
-        df_shc.insert(0, "omega", omega)
-        df_shc.insert(0, "energy", energies)
-
-        return df_shc
-
+        return 0.0
+            
     def parse(
         self,
         mainfile: str,
@@ -75,28 +100,37 @@ class WannierBerriParser(MatchingParser):
 
         # Minimal run section to satisfy NOMAD
         sec_run = Run()
-        sec_run.program = Program(name='Wannier Berri', version='v0.17.0')
+        sec_run.program = Program(name='WannierBerri', version='v0.17.0')
         archive.run.append(sec_run)
 
-        # Read SHC data
-        df_shc = self.read_shc_data(mainfile)
+        # Read SHC data from file
+        labels, energy, shc_tensor_real, shc_tensor_imag = self.read_shc_data(mainfile)
 
-        # Create SHCResults instance and populate archive.data
+        # Create SHCResults instance
         shc = SHCResults()
         archive.data = shc
 
-        # shc.omega = df_shc['omega'].values if 'omega' in df_shc else None
-        shc.Energies = df_shc['energy'].values if 'energy' in df_shc else None
+        # Assign data
+        fermi_energy = self.extract_fermi_energy(Path(mainfile))
+        energy_fermi_shift = energy - fermi_energy
+        shc.energy = energy_fermi_shift
+        shc.shc_labels = labels
+        shc.shc_tensor_real = shc_tensor_real.values
+        shc.shc_tensor_imag = shc_tensor_imag.values
+        shc.fermi_energy = fermi_energy
 
-        known_cols = [col for col in ['energy', 'omega', 'xyz'] if col in df_shc.columns]
-        shc_only = df_shc.drop(columns=known_cols, errors='ignore')
+        if 'xyz' in shc.shc_labels:
+            idx = shc.shc_labels.index('xyz')
+            shc.shc_xyz_real = shc_tensor_real.iloc[:, idx].values
+        else:
+            shc.shc_xyz_real = np.zeros(len(energy))
 
-        # shc.shc_components = np.round(shc_only.values.real, 6).astype(float)
-        shc.SHC_Labels = shc_only.columns.values.tolist()
+        # Now assign this section under archive.data (EntryData)
+        # Create a subsection attribute, e.g., archive.data.shc_results
+        archive.data.shc_results = shc
 
-        if 'xyz' in df_shc:
-            shc.SHC_XYZ_Real = df_shc['xyz'].values.real
-            # shc.shc_xyz_imag = df_shc['xyz'].values.imag
-
+        # Add minimal workflow info
         workflow = SinglePoint()
         archive.workflow2 = workflow
+
+        logger.info("WannierBerriParser.parse completed successfully")

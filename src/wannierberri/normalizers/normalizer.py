@@ -1,18 +1,11 @@
-from typing import (
-    TYPE_CHECKING,
-)
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from nomad.datamodel.datamodel import (
-        EntryArchive,
-    )
-    from structlog.stdlib import (
-        BoundLogger,
-    )
+    from nomad.datamodel.datamodel import EntryArchive
+    from structlog.stdlib import BoundLogger
 
 from nomad.config import config
 from nomad.normalizing import Normalizer
-from wannierberri.schema_packages.schema_package import SHCResults
 import numpy as np
 
 configuration = config.get_plugin_entry_point(
@@ -25,17 +18,26 @@ class WannierBerriNormalizer(Normalizer):
         super().normalize(archive, logger)
 
         if not hasattr(archive, 'data'):
-            logger.warning('No data attribute found in archive; skipping SHC normalization')
-            return
-        
-        if not isinstance(archive.data, SHCResults):
-            logger.warning('archive.data is not SHCResults; skipping SHC normalization')
+            logger.warning(
+                'No data attribute found in archive; skipping SHC normalization'
+            )
             return
 
-        shc = archive.data
-        
-        # Example: ensure omega, energies, and shc_components are numpy arrays
-        shc.Energies = np.array(shc.Energies, dtype=np.float64)
-        # shc.shc_xyz_imag = np.array(shc.shc_xyz_imag, dtype=np.float64)
-        shc.SHC_XYZ_Real = np.array(shc.SHC_XYZ_Real, dtype=np.float64)
-        shc.SHC_Labels = np.array(shc.SHC_Labels, dtype=str)
+        # If your data has shc_results subsection, use that
+        shc = getattr(archive.data, 'shc_results', None)
+        if shc is None:
+            logger.warning(
+                'No shc_results found in archive.data; skipping SHC normalization'
+            )
+            return
+
+        # Convert to numpy arrays for consistency
+        shc.energy = np.array(shc.energy, dtype=np.float64)
+        shc.shc_xyz_real = np.array(shc.shc_xyz_real, dtype=np.float64)
+        shc.shc_labels = np.array(shc.shc_labels, dtype=str)
+        shc.shc_tensor_real = np.array(shc.shc_tensor_real, dtype=np.float64)
+        shc.shc_tensor_imag = np.array(shc.shc_tensor_imag, dtype=np.float64)
+
+        logger.info(
+            "WannierBerriNormalizer.normalize", message="SHC normalization successful."
+        )
