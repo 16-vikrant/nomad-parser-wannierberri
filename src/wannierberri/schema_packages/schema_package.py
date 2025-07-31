@@ -35,9 +35,6 @@ m_package.description = 'Schema package for WannierBerri Spin Hall Conductivity 
 class SHCResults(PlotSection, EntryData):
     m_def = Section(
         label='Spin Hall Conductivity',
-        a_display={
-            'visible': True,
-        },
         a_plotly_express=[
             {
                 'method': 'line',
@@ -52,30 +49,24 @@ class SHCResults(PlotSection, EntryData):
                 },
             }
         ],
+        a_eln={
+            'display': {
+                'order': 1,
+            }
+        }
     )
 
-    shc_label = Quantity(
+    shc_labels = Quantity(
         type=str,
-        shape=[27],  # 30 tensor components (xxx ... zzz)
-        default=[
-            'xxx', 'xxy', 'xxz',
-            'xyx', 'xyy', 'xyz',
-            'xzx', 'xzy', 'xzz',
-            'yxx', 'yxy', 'yxz',
-            'yyx', 'yyy', 'yyz',
-            'yzx', 'yzy', 'yzz',
-            'zxx', 'zxy', 'zxz',
-            'zyx', 'zyy', 'zyz',
-            'zzx', 'zzy', 'zzz'
-        ],
-        description='Labels of SHC tensor components.'
+        shape=[27],  # 27 tensor components (xxx ... zzz)
+        description='Labels of SHC tensor components.',
     )
 
     energy = Quantity(
         type=np.float64,
         shape=['n_points'],
         unit='eV',
-        description='Energy (Efermi) values.'
+        description='Energy values.',
     )
 
     fermi_energy = Quantity(
@@ -90,19 +81,19 @@ class SHCResults(PlotSection, EntryData):
         type=np.float64,
         shape=['n_points'],
         unit='S/cm',
-        description='Real part of the xyz component of the SHC tensor.'
+        description='Real part of the xyz component of the SHC tensor.',
     )
 
     shc_tensor_real = Quantity(
         type=np.float64,
         shape=['n_points', 27],
-        description='Real parts of all SHC tensor components.'
+        description='Real parts of all SHC tensor components.',
     )
 
     shc_tensor_imag = Quantity(
         type=np.float64,
         shape=['n_points', 27],
-        description='Imaginary parts of all SHC tensor components.'
+        description='Imaginary parts of all SHC tensor components.',
     )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger') -> None:
